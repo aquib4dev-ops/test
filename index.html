@@ -1,0 +1,2418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SiteForge — AI-Crafted Websites</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --black:   #080808;
+      --dark:    #111111;
+      --panel:   #161616;
+      --border:  #252525;
+      --gold:    #c9a84c;
+      --gold-lt: #e8c96a;
+      --cream:   #f0ece4;
+      --muted:   #888880;
+      --white:   #fafaf8;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--black);
+      color: var(--cream);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* ── CUSTOM CURSOR ── */
+    .cursor {
+      width: 6px; height: 6px;
+      background: var(--gold);
+      border-radius: 50%;
+      position: fixed; top: 0; left: 0;
+      pointer-events: none; z-index: 9999;
+      transition: background .2s, border .2s, width .2s, height .2s;
+      will-change: transform;
+    }
+    .cursor-ring {
+      width: 26px; height: 26px;
+      border: 1px solid rgba(201,168,76,.4);
+      border-radius: 50%;
+      position: fixed; top: 0; left: 0;
+      pointer-events: none; z-index: 9998;
+      will-change: transform;
+    }
+    body:hover .cursor { opacity: 1; }
+
+    /* ── NOISE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+      opacity: .025; pointer-events: none; z-index: 1000;
+    }
+
+    /* ── ORDER MODAL ── */
+    .order-modal {
+      position: fixed;
+      top: 0;
+      right: -100%;
+      width: 100%;
+      max-width: 720px;
+      height: 100vh;
+      background: var(--panel);
+      border-left: 1px solid var(--border);
+      z-index: 9999;
+      overflow-y: auto;
+      transition: right .5s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: -20px 0 60px rgba(0,0,0,.5);
+    }
+    .order-modal.active {
+      right: 0;
+    }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.7);
+      backdrop-filter: blur(4px);
+      z-index: 9998;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .4s;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .modal-close {
+      position: absolute;
+      top: 28px;
+      right: 28px;
+      width: 40px;
+      height: 40px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--cream);
+      cursor: pointer;
+      transition: all .25s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      z-index: 10;
+    }
+    .modal-close:hover {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: var(--black);
+      transform: rotate(90deg);
+    }
+
+    /* ── NAV ── */
+    nav {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 28px 60px;
+      position: fixed; top: 0; width: 100%; z-index: 100;
+      border-bottom: 1px solid transparent;
+      transition: border-color .4s, background .4s, padding .4s;
+    }
+    nav.scrolled {
+      background: rgba(8,8,8,.92);
+      backdrop-filter: blur(12px);
+      border-color: var(--border);
+      padding: 18px 60px;
+    }
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem; font-weight: 700;
+      letter-spacing: .04em;
+      color: var(--white);
+    }
+    .logo span { color: var(--gold); }
+
+    /* ── FORM CONTAINER (inside modal) ── */
+    .form-container {
+      padding: 80px 60px 60px;
+    }
+    .form-header {
+      margin-bottom: 48px;
+    }
+    .form-eyebrow {
+      font-size: .72rem;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 16px;
+    }
+    .form-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.8rem;
+      font-weight: 900;
+      color: var(--white);
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+    .form-subtitle {
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.6;
+    }
+
+    /* ── PROGRESS STEPS ── */
+    .progress-steps {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 48px;
+      position: relative;
+    }
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      position: relative;
+      z-index: 2;
+      flex: 1;
+    }
+    .step-circle {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--panel);
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .75rem;
+      font-weight: 500;
+      transition: all .3s;
+      position: relative;
+    }
+    .step.active .step-circle {
+      border-color: var(--gold);
+      background: var(--gold);
+      color: var(--black);
+    }
+    .step.completed .step-circle {
+      border-color: var(--gold);
+      background: var(--gold);
+      color: var(--black);
+    }
+    .step.completed .step-circle::after {
+      content: '✓';
+      position: absolute;
+      font-size: .9rem;
+      font-weight: 600;
+    }
+    .step.completed .step-label {
+      color: var(--gold);
+    }
+    .step-label {
+      font-size: .7rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      transition: color .3s;
+    }
+    .step.active .step-label {
+      color: var(--gold);
+    }
+
+    /* ── FORM SECTIONS ── */
+    .form-section {
+      display: none;
+    }
+    .form-section.active {
+      display: block;
+      animation: fadeIn .4s ease;
+    }
+    .form-group {
+      margin-bottom: 32px;
+    }
+    .form-label {
+      display: block;
+      font-size: .82rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--cream);
+      margin-bottom: 12px;
+      font-weight: 400;
+    }
+    .form-label .required {
+      color: var(--gold);
+    }
+    .form-input,
+    .form-textarea,
+    .form-select {
+      width: 100%;
+      background: var(--black);
+      border: 1px solid var(--border);
+      color: var(--cream);
+      padding: 14px 18px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .95rem;
+      transition: border-color .3s, background .3s;
+      cursor: pointer;
+    }
+    .form-select option {
+      background: var(--black);
+      color: var(--cream);
+      padding: 10px;
+    }
+    .form-select option:hover,
+    .form-select option:focus,
+    .form-select option:checked {
+      background: var(--gold);
+      color: var(--black);
+    }
+    .form-input:focus,
+    .form-textarea:focus,
+    .form-select:focus {
+      outline: none;
+      border-color: var(--gold);
+      background: rgba(201,168,76,.05);
+    }
+    .form-textarea {
+      min-height: 140px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+    .form-hint {
+      font-size: .8rem;
+      color: var(--muted);
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    /* ── CHECKBOX GROUP ── */
+    .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+    }
+    .checkbox-item input[type="checkbox"] {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border: 1px solid var(--border);
+      background: var(--black);
+      cursor: pointer;
+      position: relative;
+      transition: all .2s;
+    }
+    .checkbox-item input[type="checkbox"]:checked {
+      background: var(--gold);
+      border-color: var(--gold);
+    }
+    .checkbox-item input[type="checkbox"]:checked::after {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: var(--black);
+      font-size: .75rem;
+      font-weight: 600;
+    }
+    .checkbox-label {
+      font-size: .9rem;
+      color: var(--cream);
+      cursor: pointer;
+    }
+
+    /* ── BUTTONS ── */
+    .form-actions {
+      display: flex;
+      gap: 16px;
+      margin-top: 48px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+    }
+    .btn {
+      padding: 14px 32px;
+      font-size: .85rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: all .25s;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .btn-primary-form {
+      background: var(--gold);
+      color: var(--black);
+      flex: 1;
+    }
+    .btn-primary-form:hover {
+      background: var(--gold-lt);
+      transform: translateY(-2px);
+    }
+    .btn-primary-form:disabled {
+      background: var(--border);
+      color: var(--muted);
+      cursor: not-allowed;
+      transform: none;
+    }
+    .btn-secondary {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    /* ── CONFIRMATION ── */
+    .confirmation {
+      display: none;
+      text-align: center;
+      padding: 40px 0;
+    }
+    .confirmation.active {
+      display: block;
+      animation: fadeIn .6s ease;
+    }
+    .confirmation-icon {
+      width: 80px;
+      height: 80px;
+      border: 2px solid var(--gold);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 32px;
+      font-size: 2.5rem;
+      color: var(--gold);
+    }
+    .confirmation h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.4rem;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 16px;
+    }
+    .confirmation p {
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.7;
+      margin-bottom: 12px;
+    }
+    .order-summary {
+      background: var(--black);
+      border: 1px solid var(--border);
+      padding: 32px;
+      margin: 40px 0;
+      text-align: left;
+    }
+    .order-summary h3 {
+      font-size: .82rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 24px;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: .9rem;
+    }
+    .summary-row:last-child {
+      border-bottom: none;
+    }
+    .summary-label {
+      color: var(--muted);
+    }
+    .summary-value {
+      color: var(--cream);
+      font-weight: 400;
+    }
+    .order-id {
+      font-family: 'Monaco', monospace;
+      color: var(--gold);
+      font-size: .85rem;
+    }
+    .confirmation-actions {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-top: 32px;
+    }
+
+    .nav-links { display: flex; gap: 36px; list-style: none; }
+    .nav-links a {
+      font-size: .82rem; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--muted); text-decoration: none;
+      transition: color .25s;
+    }
+    .nav-links a:hover { color: var(--cream); }
+    .nav-cta {
+      background: var(--gold); color: var(--black);
+      padding: 10px 24px; font-size: .8rem;
+      letter-spacing: .1em; text-transform: uppercase;
+      font-weight: 500; text-decoration: none;
+      transition: background .25s, transform .2s;
+    }
+    .nav-cta:hover { background: var(--gold-lt); transform: translateY(-1px); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: flex-start;
+      padding: 140px 60px 80px;
+      position: relative; overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 60% 60% at 70% 50%, rgba(201,168,76,.06) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 40% at 20% 80%, rgba(201,168,76,.04) 0%, transparent 50%);
+    }
+    .hero-line {
+      width: 1px; height: 0;
+      background: linear-gradient(to bottom, var(--gold), transparent);
+      position: absolute; left: 60px; top: 0;
+      animation: lineGrow 1.6s ease forwards .4s;
+    }
+    @keyframes lineGrow { to { height: 100px; } }
+
+    .hero-eyebrow {
+      font-size: .72rem; letter-spacing: .22em; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 28px;
+      opacity: 0; transform: translateY(12px);
+      animation: fadeUp .8s ease forwards .8s;
+    }
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(3.4rem, 7vw, 7rem);
+      line-height: 1.05; font-weight: 900;
+      color: var(--white); max-width: 820px;
+      opacity: 0; transform: translateY(20px);
+      animation: fadeUp .9s ease forwards 1s;
+    }
+    .hero h1 em {
+      font-style: italic; color: var(--gold);
+    }
+    .hero-sub {
+      max-width: 520px; font-size: 1.05rem; line-height: 1.75;
+      color: var(--muted); margin-top: 28px;
+      opacity: 0; transform: translateY(14px);
+      animation: fadeUp .8s ease forwards 1.25s;
+    }
+    .hero-actions {
+      display: flex; gap: 18px; margin-top: 48px; align-items: center;
+      opacity: 0; transform: translateY(14px);
+      animation: fadeUp .8s ease forwards 1.45s;
+    }
+    .btn-primary {
+      background: var(--gold); color: var(--black);
+      padding: 16px 40px; font-size: .88rem;
+      letter-spacing: .1em; text-transform: uppercase;
+      font-weight: 500; text-decoration: none; display: inline-block;
+      position: relative; overflow: hidden;
+      transition: transform .2s;
+    }
+    .btn-primary::after {
+      content: ''; position: absolute; inset: 0;
+      background: rgba(255,255,255,.18);
+      transform: translateX(-110%);
+      transition: transform .4s ease;
+    }
+    .btn-primary:hover::after { transform: translateX(0); }
+    .btn-primary:hover { transform: translateY(-2px); }
+
+    .btn-ghost {
+      color: var(--muted); font-size: .88rem;
+      letter-spacing: .08em; text-decoration: none;
+      display: flex; align-items: center; gap: 8px;
+      transition: color .25s;
+    }
+    .btn-ghost:hover { color: var(--cream); }
+    .btn-ghost svg { transition: transform .25s; }
+    .btn-ghost:hover svg { transform: translateX(4px); }
+
+    .hero-scroll {
+      position: absolute; bottom: 40px; left: 60px;
+      display: flex; align-items: center; gap: 14px;
+      font-size: .72rem; letter-spacing: .18em; text-transform: uppercase;
+      color: var(--border);
+      opacity: 0; animation: fadeUp .6s ease forwards 2s;
+    }
+    .scroll-line {
+      width: 40px; height: 1px; background: var(--border);
+    }
+
+    /* ── MARQUEE ── */
+    .marquee-wrap {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      overflow: hidden; padding: 16px 0;
+      background: var(--panel);
+    }
+    .marquee-track {
+      display: flex; gap: 0;
+      animation: marquee 22s linear infinite;
+      white-space: nowrap;
+    }
+    .marquee-item {
+      display: inline-flex; align-items: center; gap: 18px;
+      padding: 0 40px;
+      font-size: .72rem; letter-spacing: .18em; text-transform: uppercase;
+      color: var(--muted);
+    }
+    .marquee-dot { width: 4px; height: 4px; background: var(--gold); border-radius: 50%; }
+    @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+    /* ── SECTION BASE ── */
+    section { padding: 120px 60px; }
+    .section-label {
+      font-size: .7rem; letter-spacing: .22em; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 20px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .section-label::before {
+      content: ''; width: 28px; height: 1px; background: var(--gold);
+    }
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.2rem, 4vw, 3.6rem);
+      font-weight: 700; line-height: 1.15;
+      color: var(--white); max-width: 640px;
+    }
+    .section-title em { font-style: italic; color: var(--gold); }
+
+    /* ── HOW IT WORKS — CIRCUIT NODES ── */
+    .how { background: var(--dark); }
+
+    .circuit-wrap {
+      margin-top: 80px;
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 0;
+    }
+
+    /* ── NODE ── */
+    .circuit-node {
+      display: flex; flex-direction: column; align-items: center;
+      position: relative; flex: 1; max-width: 300px;
+    }
+
+    /* glowing ring + circle */
+    .node-circle {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      position: relative; z-index: 2;
+      transition: border-color .35s, box-shadow .35s;
+    }
+    .circuit-node:hover .node-circle {
+      border-color: var(--gold);
+      box-shadow: 0 0 28px rgba(201,168,76,.25), inset 0 0 20px rgba(201,168,76,.06);
+    }
+    .node-circle svg { color: var(--gold); transition: transform .35s; }
+    .circuit-node:hover .node-circle svg { transform: scale(1.18); }
+
+    /* pulse ring — animated halo */
+    .node-pulse {
+      position: absolute; inset: -10px;
+      border-radius: 50%;
+      border: 1px solid rgba(201,168,76,.0);
+      animation: pulse 2.6s ease-out infinite;
+    }
+    .circuit-node:nth-child(1) .node-pulse { animation-delay: 0s; }
+    .circuit-node:nth-child(3) .node-pulse { animation-delay: .9s; }
+    .circuit-node:nth-child(5) .node-pulse { animation-delay: 1.8s; }
+    @keyframes pulse {
+      0%   { transform: scale(1);   border-color: rgba(201,168,76,.5); }
+      70%  { transform: scale(1.5); border-color: rgba(201,168,76,.0); }
+      100% { transform: scale(1.5); border-color: rgba(201,168,76,.0); }
+    }
+
+    /* step number badge */
+    .node-num {
+      position: absolute; top: -8px; right: -8px;
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--gold); color: var(--black);
+      font-size: .68rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      letter-spacing: .04em; z-index: 3;
+    }
+
+    /* text below node */
+    .node-body {
+      margin-top: 28px; text-align: center; padding: 0 16px;
+    }
+    .node-body h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem; font-weight: 700;
+      color: var(--white); margin-bottom: 10px;
+    }
+    .node-body p {
+      font-size: .875rem; line-height: 1.72; color: var(--muted);
+    }
+
+    /* vertical sub-branches coming off each node */
+    .node-branches {
+      display: flex; gap: 10px; margin-top: 20px; justify-content: center;
+    }
+    .branch-tag {
+      font-size: .65rem; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--muted); background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 5px 10px;
+      position: relative;
+      transition: border-color .25s, color .25s;
+    }
+    .circuit-node:hover .branch-tag {
+      border-color: rgba(201,168,76,.3); color: var(--gold);
+    }
+    /* small vertical line from branch-tag up to connector */
+    .branch-tag::before {
+      content: '';
+      position: absolute; top: -12px; left: 50%;
+      width: 1px; height: 12px;
+      background: var(--border);
+    }
+
+    /* ── CONNECTOR (line between nodes) ── */
+    .circuit-connector {
+      flex: 0 0 auto; width: 100px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-start;
+      padding-top: 38px; /* aligns with center of node circle */
+      position: relative;
+    }
+    .connector-line {
+      width: 100%; height: 1px;
+      background: var(--border);
+      position: relative; overflow: hidden;
+    }
+    /* animated travelling dot along the line */
+    .connector-line::after {
+      content: '';
+      position: absolute; top: -2px; left: -20px;
+      width: 20px; height: 5px;
+      border-radius: 3px;
+      background: linear-gradient(to right, transparent, var(--gold), transparent);
+      animation: travel 2.5s linear infinite;
+    }
+    .circuit-connector:nth-child(2) .connector-line::after { animation-delay: 0s; }
+    .circuit-connector:nth-child(4) .connector-line::after { animation-delay: .85s; }
+    @keyframes travel {
+      from { transform: translateX(0); }
+      to   { transform: translateX(calc(100px + 20px)); }
+    }
+
+    /* dot nodes on connector corners */
+    .connector-dots {
+      display: flex; justify-content: space-between;
+      width: 100%; margin-top: -4px;
+    }
+    .cdot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--border); border: 1px solid #333;
+      transition: background .4s;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .circuit-wrap { flex-direction: column; align-items: center; }
+      .circuit-connector {
+        width: 1px; height: 60px; padding-top: 0; padding-left: 0;
+        flex-direction: column;
+      }
+      .connector-line { width: 1px; height: 60px; }
+      .connector-line::after {
+        width: 5px; height: 20px; top: -20px; left: -2px;
+        background: linear-gradient(to bottom, transparent, var(--gold), transparent);
+        animation: travelV 2.5s linear infinite;
+      }
+      @keyframes travelV {
+        from { transform: translateY(0); }
+        to   { transform: translateY(80px); }
+      }
+      .connector-dots { flex-direction: column; height: 100%; width: auto; }
+    }
+
+    /* ── FEATURES ── */
+    .features-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 80px; margin-top: 72px; align-items: center;
+    }
+    .features-visual {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      aspect-ratio: 4/3;
+      position: relative; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .mockup-browser {
+      width: 88%; background: var(--dark);
+      border: 1px solid var(--border); font-size: 0;
+      box-shadow: 0 40px 80px rgba(0,0,0,.6);
+      transform: perspective(800px) rotateY(-8deg) rotateX(3deg);
+      transition: transform .5s ease;
+    }
+    .features-visual:hover .mockup-browser {
+      transform: perspective(800px) rotateY(0deg) rotateX(0deg);
+    }
+    .browser-bar {
+      background: #1d1d1d; padding: 10px 14px;
+      display: flex; align-items: center; gap: 7px;
+      border-bottom: 1px solid var(--border);
+    }
+    .browser-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+    }
+    .browser-body { padding: 20px; }
+    .mock-line {
+      height: 8px; border-radius: 4px;
+      background: var(--border); margin-bottom: 10px;
+    }
+    .mock-line.short { width: 55%; }
+    .mock-line.xshort { width: 35%; }
+    .mock-line.gold { background: rgba(201,168,76,.25); }
+
+    .feature-list { list-style: none; }
+    .feature-item {
+      display: flex; gap: 18px; align-items: flex-start;
+      padding: 22px 0; border-bottom: 1px solid var(--border);
+    }
+    .feature-item:last-child { border-bottom: none; }
+    .feature-check {
+      width: 24px; height: 24px; flex-shrink: 0;
+      background: rgba(201,168,76,.1);
+      border: 1px solid rgba(201,168,76,.3);
+      display: flex; align-items: center; justify-content: center;
+      margin-top: 2px; color: var(--gold); font-size: .85rem;
+    }
+    .feature-item h4 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05rem; color: var(--white); margin-bottom: 5px;
+    }
+    .feature-item p { font-size: .88rem; color: var(--muted); line-height: 1.6; }
+
+    /* ── PRICING ── */
+    .pricing { background: var(--dark); }
+    .pricing-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 2px; margin-top: 64px;
+    }
+    .price-card {
+      background: var(--panel); padding: 48px 36px;
+      position: relative; transition: background .3s;
+    }
+    .price-card.featured {
+      background: var(--gold);
+    }
+    .price-card.featured * { color: var(--black) !important; }
+    .price-badge {
+      display: inline-block; font-size: .65rem;
+      letter-spacing: .16em; text-transform: uppercase;
+      background: var(--black); color: var(--gold);
+      padding: 5px 12px; margin-bottom: 24px;
+      font-weight: 500;
+    }
+    .price-card.featured .price-badge { background: rgba(0,0,0,.15); color: var(--black); }
+    .price-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem; font-weight: 700; color: var(--white);
+      margin-bottom: 8px;
+    }
+    .price-amount {
+      font-size: 3rem; font-weight: 300;
+      color: var(--white); line-height: 1;
+      margin: 20px 0;
+    }
+    .price-amount sup {
+      font-size: 1.2rem; vertical-align: top; margin-top: 10px;
+    }
+    .price-desc { font-size: .88rem; color: var(--muted); margin-bottom: 32px; line-height: 1.6; }
+    .price-features { list-style: none; margin-bottom: 40px; }
+    .price-features li {
+      font-size: .88rem; color: var(--muted);
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+      display: flex; gap: 10px; align-items: center;
+    }
+    .price-card.featured .price-features li { border-color: rgba(0,0,0,.15); }
+    .price-features li::before {
+      content: '✦'; color: var(--gold); font-size: .6rem; flex-shrink: 0;
+    }
+    .price-card.featured .price-features li::before { color: var(--black); }
+    .price-btn {
+      display: block; text-align: center;
+      padding: 14px; font-size: .82rem;
+      letter-spacing: .1em; text-transform: uppercase;
+      text-decoration: none; font-weight: 500;
+      border: 1px solid var(--border); color: var(--cream);
+      transition: all .25s;
+    }
+    .price-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .price-card.featured .price-btn {
+      background: var(--black); color: var(--gold); border-color: var(--black);
+    }
+
+    /* ── TESTIMONIALS ── */
+    .testimonials-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 2px; margin-top: 64px;
+    }
+    .testi-card {
+      background: var(--panel); padding: 40px 36px;
+    }
+    .testi-stars { color: var(--gold); letter-spacing: 3px; margin-bottom: 20px; font-size: .85rem; }
+    .testi-text {
+      font-family: 'Playfair Display', serif; font-style: italic;
+      font-size: 1.05rem; line-height: 1.7; color: var(--cream);
+      margin-bottom: 28px;
+    }
+    .testi-author { display: flex; gap: 14px; align-items: center; }
+    .testi-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--border); display: flex;
+      align-items: center; justify-content: center;
+      font-family: 'Playfair Display', serif; font-size: 1rem;
+      color: var(--gold);
+    }
+    .testi-name { font-size: .9rem; color: var(--white); }
+    .testi-role { font-size: .78rem; color: var(--muted); }
+
+    /* ── BOOK A CALL ── */
+    .booking { background: var(--black); }
+    .booking-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 80px; margin-top: 64px; align-items: start;
+    }
+
+    /* left — explainer */
+    .booking-left { }
+    .booking-perks { list-style: none; margin-top: 36px; }
+    .booking-perk {
+      display: flex; gap: 16px; align-items: flex-start;
+      padding: 18px 0; border-bottom: 1px solid var(--border);
+    }
+    .booking-perk:last-child { border-bottom: none; }
+    .perk-icon {
+      width: 38px; height: 38px; flex-shrink: 0;
+      border: 1px solid rgba(201,168,76,.25);
+      background: rgba(201,168,76,.06);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--gold);
+    }
+    .booking-perk h4 { font-size: .95rem; color: var(--white); margin-bottom: 4px; }
+    .booking-perk p  { font-size: .83rem; color: var(--muted); line-height: 1.6; }
+
+    /* right — booking widget */
+    .booking-widget {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 40px;
+    }
+    .widget-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem; font-weight: 700;
+      color: var(--white); margin-bottom: 6px;
+    }
+    .widget-sub { font-size: .83rem; color: var(--muted); margin-bottom: 28px; }
+
+    /* step indicator inside widget */
+    .widget-steps {
+      display: flex; gap: 0; margin-bottom: 32px;
+    }
+    .wstep {
+      flex: 1; text-align: center; font-size: .68rem;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: var(--muted); padding-bottom: 10px;
+      border-bottom: 2px solid var(--border);
+      transition: color .3s, border-color .3s;
+    }
+    .wstep.active { color: var(--gold); border-color: var(--gold); }
+    .wstep.done   { color: var(--muted); border-color: var(--gold); opacity: .5; }
+
+    /* day picker */
+    .day-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 8px; margin-bottom: 24px;
+    }
+    .day-btn {
+      background: var(--dark); border: 1px solid var(--border);
+      color: var(--muted); padding: 10px 6px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .78rem; text-align: center; cursor: none;
+      transition: all .2s;
+    }
+    .day-btn span { display: block; font-size: .65rem; letter-spacing: .08em; color: var(--border); margin-bottom: 3px; }
+    .day-btn:hover { border-color: rgba(201,168,76,.4); color: var(--cream); }
+    .day-btn.selected { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,.06); }
+    .day-btn.disabled { opacity: .3; pointer-events: none; }
+
+    /* time slots */
+    .time-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 8px; margin-bottom: 24px;
+    }
+    .time-btn {
+      background: var(--dark); border: 1px solid var(--border);
+      color: var(--muted); padding: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .8rem; text-align: center; cursor: none;
+      transition: all .2s;
+    }
+    .time-btn:hover { border-color: rgba(201,168,76,.4); color: var(--cream); }
+    .time-btn.selected { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,.06); }
+
+    /* contact fields */
+    .field-group { margin-bottom: 14px; }
+    .field-group label {
+      display: block; font-size: .72rem;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 6px;
+    }
+    .field-group input {
+      width: 100%; background: var(--dark);
+      border: 1px solid var(--border);
+      color: var(--cream); padding: 12px 14px;
+      font-family: 'DM Sans', sans-serif; font-size: .9rem;
+      outline: none; transition: border-color .25s;
+    }
+    .field-group input:focus { border-color: var(--gold); }
+    .field-group input::placeholder { color: var(--border); }
+
+    .widget-nav {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-top: 24px;
+    }
+    .wbtn {
+      padding: 12px 28px; font-size: .8rem;
+      letter-spacing: .1em; text-transform: uppercase;
+      font-family: 'DM Sans', sans-serif; font-weight: 500;
+      cursor: none; transition: all .25s; border: none;
+    }
+    .wbtn-ghost {
+      background: none; border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .wbtn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+    .wbtn-gold {
+      background: var(--gold); color: var(--black);
+    }
+    .wbtn-gold:hover { background: var(--gold-lt); }
+    .wbtn:disabled { opacity: .3; pointer-events: none; }
+
+    /* confirmation state */
+    .booking-confirm {
+      text-align: center; padding: 20px 0; display: none;
+    }
+    .confirm-icon {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: rgba(201,168,76,.1);
+      border: 1px solid rgba(201,168,76,.3);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px; color: var(--gold); font-size: 1.6rem;
+    }
+    .booking-confirm h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem; color: var(--white); margin-bottom: 10px;
+    }
+    .booking-confirm p { font-size: .88rem; color: var(--muted); line-height: 1.7; }
+    .confirm-details {
+      margin: 20px 0; padding: 16px;
+      background: var(--dark); border: 1px solid var(--border);
+      font-size: .85rem; color: var(--cream); line-height: 1.8;
+      text-align: left;
+    }
+    .confirm-details span { color: var(--gold); font-weight: 500; }
+
+    /* panel visibility */
+    .widget-panel { display: none; }
+    .widget-panel.active { display: block; }
+
+    @media (max-width: 900px) {
+      .booking-grid { grid-template-columns: 1fr; gap: 40px; }
+      .day-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    /* ── CTA BAND ── */
+    .cta-band {
+      background: var(--gold);
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 80px 60px; gap: 40px;
+    }
+    .cta-band h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 3.5vw, 3rem);
+      font-weight: 900; color: var(--black);
+      max-width: 560px; line-height: 1.15;
+    }
+    .cta-band h2 em { font-style: italic; }
+    .btn-dark {
+      background: var(--black); color: var(--gold);
+      padding: 18px 44px; font-size: .88rem;
+      letter-spacing: .1em; text-transform: uppercase;
+      font-weight: 500; text-decoration: none; white-space: nowrap;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .btn-dark:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(0,0,0,.3); }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--dark);
+      border-top: 1px solid var(--border);
+      padding: 60px 60px 40px;
+    }
+    .footer-top {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      padding-bottom: 40px; border-bottom: 1px solid var(--border);
+      gap: 40px; flex-wrap: wrap;
+    }
+    .footer-brand .logo { font-size: 1.6rem; }
+    .footer-brand p { font-size: .88rem; color: var(--muted); margin-top: 12px; max-width: 280px; line-height: 1.65; }
+    .footer-links h5 {
+      font-size: .72rem; letter-spacing: .18em; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 18px;
+    }
+    .footer-links ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .footer-links a { font-size: .88rem; color: var(--muted); text-decoration: none; transition: color .2s; }
+    .footer-links a:hover { color: var(--cream); }
+    .footer-bottom {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-top: 30px; flex-wrap: wrap; gap: 12px;
+    }
+    .footer-bottom p { font-size: .78rem; color: var(--border); }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .reveal {
+      opacity: 0; transform: translateY(30px);
+      transition: opacity .7s ease, transform .7s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      nav, section, .hero, .cta-band, footer { padding-left: 28px; padding-right: 28px; }
+      .how-grid, .pricing-grid, .testimonials-grid { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: 1fr; }
+      .cta-band { flex-direction: column; }
+      .hero h1 { font-size: 2.8rem; }
+      .nav-links { display: none; }
+      nav { padding-top: 22px; padding-bottom: 22px; }
+      
+      /* Modal responsive */
+      .order-modal { max-width: 100%; }
+      .form-container { padding: 80px 24px 60px; }
+      .form-title { font-size: 2.2rem; }
+      .modal-close { top: 20px; right: 20px; }
+      .progress-steps { flex-direction: column; gap: 16px; }
+      .step { flex-direction: row; justify-content: flex-start; }
+      .form-actions { flex-direction: column; }
+      .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <!-- NAV -->
+  <nav id="nav">
+    <a href="#home" class="logo">Site<span>Forge</span></a>
+    <ul class="nav-links">
+      <li><a href="#how">How It Works</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#" class="open-order-modal">Order Now</a></li>
+    </ul>
+    <a href="#" class="nav-cta open-order-modal">Order a Website</a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero" id="home">
+    <div class="hero-bg"></div>
+    <div class="hero-line"></div>
+    <p class="hero-eyebrow">AI-Powered Web Design Studio</p>
+    <h1>Your website,<br/><em>crafted by AI</em>,<br/>delivered flawlessly.</h1>
+    <p class="hero-sub">
+      Describe your dream website in plain words. Our AI builds it, refines it, and delivers 
+      a fully crafted site — no tech knowledge needed, no back-and-forth calls.
+    </p>
+    <div class="hero-actions">
+      <a href="#" class="btn-primary open-order-modal">Start Your Order</a>
+      <a href="#how" class="btn-ghost">
+        See how it works
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+    </div>
+    <div class="hero-scroll">
+      <span class="scroll-line"></span>
+      Scroll to explore
+    </div>
+  </section>
+
+  <!-- MARQUEE -->
+  <div class="marquee-wrap">
+    <div class="marquee-track">
+      <span class="marquee-item">Landing Pages <span class="marquee-dot"></span></span>
+      <span class="marquee-item">E-Commerce Stores <span class="marquee-dot"></span></span>
+      <span class="marquee-item">Portfolio Sites <span class="marquee-dot"></span></span>
+      <span class="marquee-item">Business Websites <span class="marquee-dot"></span></span>
+      <span class="marquee-item">Restaurant Sites <span class="marquee-dot"></span></span>
+      <span class="marquee-item">Startup Pages <span class="marquee-dot"></span></span>
+      <span class="marquee-item">Blog Platforms <span class="marquee-dot"></span></span>
+      <span class="marquee-item">Agency Portfolios <span class="marquee-dot"></span></span>
+      <!-- duplicate for seamless loop -->
+      <span class="marquee-item">Landing Pages <span class="marquee-dot"></span></span>
+      <span class="marquee-item">E-Commerce Stores <span class="marquee-dot"></span></span>
+      <span class="marquee-item">Portfolio Sites <span class="marquee-dot"></span></span>
+      <span class="marquee-item">Business Websites <span class="marquee-dot"></span></span>
+      <span class="marquee-item">Restaurant Sites <span class="marquee-dot"></span></span>
+      <span class="marquee-item">Startup Pages <span class="marquee-dot"></span></span>
+      <span class="marquee-item">Blog Platforms <span class="marquee-dot"></span></span>
+      <span class="marquee-item">Agency Portfolios <span class="marquee-dot"></span></span>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <section class="how" id="how">
+    <p class="section-label reveal">Process</p>
+    <h2 class="section-title reveal">Three steps to your <em>perfect website</em></h2>
+    <div class="circuit-wrap reveal">
+
+      <!-- NODE 1 -->
+      <div class="circuit-node">
+        <div class="node-circle">
+          <div class="node-pulse"></div>
+          <span class="node-num">1</span>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+        </div>
+        <div class="node-body">
+          <h3>Describe Your Vision</h3>
+          <p>Tell us your business, vibe, colors, and features — in plain words. No tech knowledge needed.</p>
+          <div class="node-branches">
+            <span class="branch-tag">Business type</span>
+            <span class="branch-tag">Colors</span>
+            <span class="branch-tag">Pages</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONNECTOR 1→2 -->
+      <div class="circuit-connector">
+        <div class="connector-line"></div>
+        <div class="connector-dots">
+          <div class="cdot"></div>
+          <div class="cdot"></div>
+        </div>
+      </div>
+
+      <!-- NODE 2 -->
+      <div class="circuit-node">
+        <div class="node-circle">
+          <div class="node-pulse"></div>
+          <span class="node-num">2</span>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+          </svg>
+        </div>
+        <div class="node-body">
+          <h3>AI Builds & Refines</h3>
+          <p>Our AI generates layouts, writes copy, picks palettes — crafting every detail to match your order.</p>
+          <div class="node-branches">
+            <span class="branch-tag">Layout</span>
+            <span class="branch-tag">Copy</span>
+            <span class="branch-tag">SEO</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONNECTOR 2→3 -->
+      <div class="circuit-connector">
+        <div class="connector-line"></div>
+        <div class="connector-dots">
+          <div class="cdot"></div>
+          <div class="cdot"></div>
+        </div>
+      </div>
+
+      <!-- NODE 3 -->
+      <div class="circuit-node">
+        <div class="node-circle">
+          <div class="node-pulse"></div>
+          <span class="node-num">3</span>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <div class="node-body">
+          <h3>Review & Launch</h3>
+          <p>We deliver your site on time. Review it, request final tweaks, then publish it to the world.</p>
+          <div class="node-branches">
+            <span class="branch-tag">Preview</span>
+            <span class="branch-tag">Revisions</span>
+            <span class="branch-tag">Go Live</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features" id="features">
+    <p class="section-label reveal">Why SiteForge</p>
+    <h2 class="section-title reveal">Everything handled, <em>nothing left out</em></h2>
+    <div class="features-grid">
+      <div class="features-visual reveal">
+        <div class="mockup-browser">
+          <div class="browser-bar">
+            <div class="browser-dot" style="background:#ff5f57"></div>
+            <div class="browser-dot" style="background:#febc2e"></div>
+            <div class="browser-dot" style="background:#28c840"></div>
+          </div>
+          <div class="browser-body">
+            <div class="mock-line gold" style="width:60%;height:14px;margin-bottom:18px;border-radius:2px"></div>
+            <div class="mock-line short"></div>
+            <div class="mock-line"></div>
+            <div class="mock-line xshort"></div>
+            <div style="height:12px"></div>
+            <div class="mock-line" style="width:100%;height:60px;background:rgba(201,168,76,.08);border-radius:2px;margin-bottom:14px"></div>
+            <div class="mock-line short"></div>
+            <div class="mock-line xshort"></div>
+            <div class="mock-line"></div>
+          </div>
+        </div>
+      </div>
+      <ul class="feature-list reveal">
+        <li class="feature-item">
+          <div class="feature-check">✦</div>
+          <div>
+            <h4>AI-Written Copy</h4>
+            <p>Every headline, paragraph, and call-to-action is written by AI tailored to your business and audience.</p>
+          </div>
+        </li>
+        <li class="feature-item">
+          <div class="feature-check">✦</div>
+          <div>
+            <h4>Mobile-First Design</h4>
+            <p>Every site looks and performs perfectly on phones, tablets, and desktops — no compromises.</p>
+          </div>
+        </li>
+        <li class="feature-item">
+          <div class="feature-check">✦</div>
+          <div>
+            <h4>SEO-Ready Structure</h4>
+            <p>Built with semantic HTML, fast load speeds, and meta tags so your site ranks from day one.</p>
+          </div>
+        </li>
+        <li class="feature-item">
+          <div class="feature-check">✦</div>
+          <div>
+            <h4>Unlimited Revisions</h4>
+            <p>Not exactly right? Request changes and our team refines until you're 100% satisfied.</p>
+          </div>
+        </li>
+        <li class="feature-item">
+          <div class="feature-check">✦</div>
+          <div>
+            <h4>Fast Turnaround</h4>
+            <p>Most sites delivered within 3–5 business days. Rush orders available for tight deadlines.</p>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section class="pricing" id="pricing">
+    <p class="section-label reveal">Pricing</p>
+    <h2 class="section-title reveal">Simple pricing, <em>no surprises</em></h2>
+    <div class="pricing-grid">
+      <div class="price-card reveal">
+        <span class="price-badge">Starter</span>
+        <div class="price-name">Basic Site</div>
+        <div class="price-amount"><sup>$</sup>299</div>
+        <p class="price-desc">For individuals and small businesses who need a clean, effective online presence.</p>
+        <ul class="price-features">
+          <li>Up to 5 pages</li>
+          <li>AI-written copy</li>
+          <li>Mobile responsive</li>
+          <li>Contact form</li>
+          <li>3 revision rounds</li>
+          <li>5-day delivery</li>
+        </ul>
+        <a href="order.html" class="price-btn">Get Started</a>
+      </div>
+      <div class="price-card featured reveal">
+        <span class="price-badge">Most Popular</span>
+        <div class="price-name">Professional</div>
+        <div class="price-amount"><sup>$</sup>699</div>
+        <p class="price-desc">For growing businesses that want to stand out and convert visitors into customers.</p>
+        <ul class="price-features">
+          <li>Up to 12 pages</li>
+          <li>Custom AI design system</li>
+          <li>SEO optimization</li>
+          <li>Blog / CMS setup</li>
+          <li>Unlimited revisions</li>
+          <li>3-day delivery</li>
+        </ul>
+        <a href="order.html" class="price-btn">Get Started</a>
+      </div>
+      <div class="price-card reveal">
+        <span class="price-badge">Enterprise</span>
+        <div class="price-name">Full Platform</div>
+        <div class="price-amount"><sup>$</sup>1,499</div>
+        <p class="price-desc">For brands that need e-commerce, advanced integrations, or a fully custom platform.</p>
+        <ul class="price-features">
+          <li>Unlimited pages</li>
+          <li>E-Commerce store</li>
+          <li>Payment integration</li>
+          <li>Custom animations</li>
+          <li>Dedicated manager</li>
+          <li>Rush 2-day delivery</li>
+        </ul>
+        <a href="order.html" class="price-btn">Get Started</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section id="testimonials">
+    <p class="section-label reveal">Testimonials</p>
+    <h2 class="section-title reveal">Clients who trusted <em>SiteForge</em></h2>
+    <div class="testimonials-grid">
+      <div class="testi-card reveal">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"I described my bakery in 5 sentences and got back a website I would have paid an agency $4,000 for. Absolutely incredible."</p>
+        <div class="testi-author">
+          <div class="testi-avatar">S</div>
+          <div>
+            <div class="testi-name">Sofia Marchetti</div>
+            <div class="testi-role">Owner, La Dolce Bakery</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card reveal">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"As a developer I was skeptical, but the code quality is clean and the design honestly looks better than what I'd build myself."</p>
+        <div class="testi-author">
+          <div class="testi-avatar">J</div>
+          <div>
+            <div class="testi-name">James Okonkwo</div>
+            <div class="testi-role">Freelance Developer</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card reveal">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"We launched our startup landing page in 3 days. The AI understood our product better than we explained it. Revenue went up 40%."</p>
+        <div class="testi-author">
+          <div class="testi-avatar">A</div>
+          <div>
+            <div class="testi-name">Anaya Patel</div>
+            <div class="testi-role">Co-founder, NovaSaaS</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BOOK A CALL -->
+  <section class="booking" id="booking">
+    <p class="section-label reveal">Not Sure Where to Start?</p>
+    <h2 class="section-title reveal">Talk to a <em>real person</em> — we'll guide you through it</h2>
+
+    <div class="booking-grid">
+
+      <!-- LEFT: Why book -->
+      <div class="booking-left reveal">
+        <p style="font-size:.97rem;color:var(--muted);line-height:1.8;max-width:480px;">
+          Not a tech person? That's exactly why we're here. Book a free 20-minute call 
+          with one of our team members — we'll listen to what you need, answer every question, 
+          and help you fill out your order with zero confusion.
+        </p>
+        <ul class="booking-perks">
+          <li class="booking-perk">
+            <div class="perk-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.82a16 16 0 0 0 6.27 6.27l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+              </svg>
+            </div>
+            <div>
+              <h4>Free 20-Minute Call</h4>
+              <p>No sales pressure. We just listen and help you figure out exactly what you need.</p>
+            </div>
+          </li>
+          <li class="booking-perk">
+            <div class="perk-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </div>
+            <div>
+              <h4>Pick Any Time That Suits You</h4>
+              <p>Morning, afternoon or evening slots available across the week.</p>
+            </div>
+          </li>
+          <li class="booking-perk">
+            <div class="perk-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <div>
+              <h4>Dedicated Human, Not a Bot</h4>
+              <p>A real team member who knows our process inside out — speaks your language, not tech jargon.</p>
+            </div>
+          </li>
+          <li class="booking-perk">
+            <div class="perk-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <div>
+              <h4>Walk Away With Clarity</h4>
+              <p>By the end of the call you'll know exactly what to order, what it'll cost, and when it'll be ready.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- RIGHT: Booking widget -->
+      <div class="booking-widget reveal">
+        <div class="widget-title">Book Your Free Call</div>
+        <div class="widget-sub">3 quick steps — takes less than a minute</div>
+
+        <!-- step indicators -->
+        <div class="widget-steps">
+          <div class="wstep active" id="ws1">Pick a Day</div>
+          <div class="wstep" id="ws2">Pick a Time</div>
+          <div class="wstep" id="ws3">Your Details</div>
+        </div>
+
+        <!-- PANEL 1: Day -->
+        <div class="widget-panel active" id="panel1">
+          <div class="day-grid" id="dayGrid"></div>
+          <div class="widget-nav">
+            <span style="font-size:.78rem;color:var(--muted)">Select a day to continue</span>
+            <button class="wbtn wbtn-gold" id="toStep2" disabled>Next →</button>
+          </div>
+        </div>
+
+        <!-- PANEL 2: Time -->
+        <div class="widget-panel" id="panel2">
+          <div class="time-grid" id="timeGrid">
+            <button class="time-btn" data-time="9:00 AM">9:00 AM</button>
+            <button class="time-btn" data-time="10:00 AM">10:00 AM</button>
+            <button class="time-btn" data-time="11:00 AM">11:00 AM</button>
+            <button class="time-btn" data-time="1:00 PM">1:00 PM</button>
+            <button class="time-btn" data-time="2:00 PM">2:00 PM</button>
+            <button class="time-btn" data-time="3:00 PM">3:00 PM</button>
+            <button class="time-btn" data-time="4:00 PM">4:00 PM</button>
+            <button class="time-btn" data-time="5:00 PM">5:00 PM</button>
+            <button class="time-btn" data-time="6:00 PM">6:00 PM</button>
+          </div>
+          <div class="widget-nav">
+            <button class="wbtn wbtn-ghost" id="toStep1Back">← Back</button>
+            <button class="wbtn wbtn-gold" id="toStep3" disabled>Next →</button>
+          </div>
+        </div>
+
+        <!-- PANEL 3: Details -->
+        <div class="widget-panel" id="panel3">
+          <div class="field-group">
+            <label>Your Name</label>
+            <input type="text" id="clientName" placeholder="e.g. Ravi Sharma" />
+          </div>
+          <div class="field-group">
+            <label>Email Address</label>
+            <input type="email" id="clientEmail" placeholder="you@example.com" />
+          </div>
+          <div class="field-group">
+            <label>What's your website for? (optional)</label>
+            <input type="text" id="clientBiz" placeholder="e.g. My restaurant, my clothing brand..." />
+          </div>
+          <div class="widget-nav">
+            <button class="wbtn wbtn-ghost" id="toStep2Back">← Back</button>
+            <button class="wbtn wbtn-gold" id="confirmBook">Confirm Booking</button>
+          </div>
+        </div>
+
+        <!-- CONFIRMATION -->
+        <div class="booking-confirm" id="bookingConfirm">
+          <div class="confirm-icon">✦</div>
+          <h3>You're Booked!</h3>
+          <p>A confirmation has been sent to your email. One of our team members will call you at the scheduled time.</p>
+          <div class="confirm-details" id="confirmDetails"></div>
+          <p style="font-size:.8rem;color:var(--border);margin-top:12px;">Need to reschedule? Reply to the confirmation email.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA BAND -->
+
+  <div class="cta-band reveal">
+    <h2>Ready to get your <em>dream website</em> built today?</h2>
+    <a href="order.html" class="btn-dark">Start Your Order →</a>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="logo">Site<span>Forge</span></div>
+        <p>AI-powered web design delivered fast. Describe it, we build it.</p>
+      </div>
+      <div class="footer-links">
+        <h5>Navigate</h5>
+        <ul>
+          <li><a href="#how">How It Works</a></li>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="#booking">Talk to Us</a></li>
+          <li><a href="order.html">Order a Website</a></li>
+        </ul>
+      </div>
+      <div class="footer-links">
+        <h5>Company</h5>
+        <ul>
+          <li><a href="#">About Us</a></li>
+          <li><a href="#">Portfolio</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-links">
+        <h5>Legal</h5>
+        <ul>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms of Service</a></li>
+          <li><a href="#">Refund Policy</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 SiteForge. All rights reserved.</p>
+      <p>Built with AI. Delivered with care.</p>
+    </div>
+  </footer>
+
+  <!-- ORDER MODAL -->
+  <div class="modal-overlay" id="modalOverlay"></div>
+  <div class="order-modal" id="orderModal">
+    <button class="modal-close" id="modalClose">×</button>
+    
+    <div class="form-container">
+      <!-- Form Header -->
+      <div class="form-header">
+        <div class="form-eyebrow">Step Into The Future</div>
+        <h1 class="form-title">Order Your Website</h1>
+        <p class="form-subtitle">Tell us about your vision, and we'll bring it to life with AI-powered design.</p>
+      </div>
+
+      <!-- Progress Steps -->
+      <div class="progress-steps">
+        <div class="step active" id="step1">
+          <div class="step-circle">1</div>
+          <div class="step-label">Business Info</div>
+        </div>
+        <div class="step" id="step2">
+          <div class="step-circle">2</div>
+          <div class="step-label">Website Details</div>
+        </div>
+        <div class="step" id="step3">
+          <div class="step-circle">3</div>
+          <div class="step-label">Contact</div>
+        </div>
+      </div>
+
+      <!-- FORM SECTION 1: Business Info -->
+      <div class="form-section active" id="section1">
+        <div class="form-group">
+          <label class="form-label">Business Name <span class="required">*</span></label>
+          <input type="text" class="form-input" id="businessName" placeholder="Acme Corp" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Industry <span class="required">*</span></label>
+          <select class="form-select" id="industry" required>
+            <option value="">Select your industry</option>
+            <option value="ecommerce">E-commerce / Retail</option>
+            <option value="restaurant">Restaurant / Café</option>
+            <option value="services">Professional Services</option>
+            <option value="health">Health & Wellness</option>
+            <option value="tech">Technology / SaaS</option>
+            <option value="realestate">Real Estate</option>
+            <option value="creative">Creative / Agency</option>
+            <option value="education">Education / Training</option>
+            <option value="nonprofit">Nonprofit / Community</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Website URL (if you have one)</label>
+          <input type="url" class="form-input" id="currentWebsite" placeholder="https://yoursite.com">
+          <div class="form-hint">We'll use this as inspiration if provided.</div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-primary-form" id="toSection2">Next: Website Details →</button>
+        </div>
+      </div>
+
+      <!-- FORM SECTION 2: Website Details -->
+      <div class="form-section" id="section2">
+        <div class="form-group">
+          <label class="form-label">Describe Your Dream Website <span class="required">*</span></label>
+          <textarea class="form-textarea" id="websiteDescription" placeholder="Example: I need a modern portfolio site to showcase my photography work. Should have a gallery, about page, and contact form. Clean, minimal design with lots of white space." required></textarea>
+          <div class="form-hint">Be specific! Mention pages, features, colors, vibe — anything that matters to you.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">What features do you need?</label>
+          <div class="checkbox-group">
+            <label class="checkbox-item">
+              <input type="checkbox" value="contact-form" class="feature-checkbox">
+              <span class="checkbox-label">Contact Form</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" value="blog" class="feature-checkbox">
+              <span class="checkbox-label">Blog / News Section</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" value="ecommerce" class="feature-checkbox">
+              <span class="checkbox-label">E-commerce / Shop</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" value="gallery" class="feature-checkbox">
+              <span class="checkbox-label">Photo / Video Gallery</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" value="booking" class="feature-checkbox">
+              <span class="checkbox-label">Booking / Appointment System</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" value="membership" class="feature-checkbox">
+              <span class="checkbox-label">Login / Membership Area</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Timeline</label>
+          <select class="form-select" id="timeline">
+            <option value="urgent">Rush (2-3 days) — +$200</option>
+            <option value="standard" selected>Standard (5-7 days)</option>
+            <option value="flexible">Flexible (1-2 weeks)</option>
+          </select>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-secondary" id="backToSection1">← Back</button>
+          <button class="btn btn-primary-form" id="toSection3">Next: Contact Info →</button>
+        </div>
+      </div>
+
+      <!-- FORM SECTION 3: Contact Info -->
+      <div class="form-section" id="section3">
+        <div class="form-group">
+          <label class="form-label">Full Name <span class="required">*</span></label>
+          <input type="text" class="form-input" id="fullName" placeholder="Jane Doe" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email Address <span class="required">*</span></label>
+          <input type="email" class="form-input" id="email" placeholder="jane@example.com" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Phone Number</label>
+          <input type="tel" class="form-input" id="phone" placeholder="+1 (555) 123-4567">
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-secondary" id="backToSection2">← Back</button>
+          <button class="btn btn-primary-form" id="submitOrder">Submit Order →</button>
+        </div>
+      </div>
+
+      <!-- CONFIRMATION -->
+      <div class="confirmation" id="confirmation">
+        <div class="confirmation-icon">✓</div>
+        <h2>Order Received!</h2>
+        <p>Thank you for choosing SiteForge. We've received your order and will start working on your website immediately.</p>
+        <p>You'll receive a confirmation email at <strong id="confirmEmail"></strong></p>
+
+        <div class="order-summary">
+          <h3>Order Summary</h3>
+          <div class="summary-row">
+            <span class="summary-label">Order ID</span>
+            <span class="summary-value order-id" id="orderId"></span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Business Name</span>
+            <span class="summary-value" id="summaryBusiness"></span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Industry</span>
+            <span class="summary-value" id="summaryIndustry"></span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Timeline</span>
+            <span class="summary-value" id="summaryTimeline"></span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label">Estimated Delivery</span>
+            <span class="summary-value" id="estimatedDelivery"></span>
+          </div>
+        </div>
+
+        <div class="confirmation-actions">
+          <button class="btn btn-primary-form" id="closeModalAfterOrder">Close</button>
+          <button class="btn btn-secondary" onclick="window.print()">Print Receipt</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Website Generator Engine - MUST LOAD FIRST -->
+  <script src="ai-generator.js"></script>
+
+  <script>
+    // ─── CURSOR ───────────────────────────────────────────────
+    // JavaScript lesson #1: Variables store data.
+    const cursor = document.getElementById('cursor');
+    const ring   = document.getElementById('cursorRing');
+
+    // Raw mouse position — updated instantly on every mouse move
+    let mouseX = 0, mouseY = 0;
+    // Ring position — lags slightly behind for a smooth trailing effect
+    let ringX = 0, ringY = 0;
+
+    // JavaScript lesson #2: mousemove fires every time the mouse moves.
+    // We only store the position here — we don't move the cursor yet.
+    document.addEventListener('mousemove', function(e) {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    });
+
+    // JavaScript lesson #3: requestAnimationFrame runs a function on every
+    // screen refresh (60–144 times per second). This is the smoothest way
+    // to animate anything in the browser — no jitter, no lag.
+    function animateCursor() {
+      // Move the dot instantly to the real mouse position
+      cursor.style.transform = `translate(${mouseX - 3}px, ${mouseY - 3}px)`;
+
+      // Lerp = Linear Interpolation: blend ringX toward mouseX by 12% each frame.
+      // This creates the smooth "catching up" trail effect on the ring.
+      // Formula: current + (target - current) * speed
+      ringX += (mouseX - ringX) * 0.12;
+      ringY += (mouseY - ringY) * 0.12;
+      ring.style.transform = `translate(${ringX - 13}px, ${ringY - 13}px)`;
+
+      // Keep looping — calls itself on every frame
+      requestAnimationFrame(animateCursor);
+    }
+    animateCursor(); // kick off the loop
+
+    // Hover effect on links/buttons
+    document.querySelectorAll('a, button').forEach(function(el) {
+      el.addEventListener('mouseenter', function() {
+        cursor.style.width  = '8px';
+        cursor.style.height = '8px';
+        cursor.style.background = 'transparent';
+        cursor.style.border = '1px solid var(--gold)';
+      });
+      el.addEventListener('mouseleave', function() {
+        cursor.style.width  = '6px';
+        cursor.style.height = '6px';
+        cursor.style.background = 'var(--gold)';
+        cursor.style.border = 'none';
+      });
+    });
+
+    // ─── NAV SCROLL ───────────────────────────────────────────
+    // JavaScript lesson #3: window.addEventListener('scroll') fires as you scroll.
+    // We check how far down the page is and add a CSS class to change the nav style.
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', function() {
+      // window.scrollY = how many pixels scrolled from top
+      if (window.scrollY > 60) {
+        nav.classList.add('scrolled');    // .classList.add() adds a CSS class
+      } else {
+        nav.classList.remove('scrolled'); // .classList.remove() removes it
+      }
+    });
+
+    // ─── SCROLL REVEAL ────────────────────────────────────────
+    // JavaScript lesson #4: IntersectionObserver watches when elements enter the viewport.
+    // Much better than checking scroll position manually — more efficient.
+    const observer = new IntersectionObserver(
+      function(entries) {
+        // 'entries' is an array of observed elements
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {           // if the element is visible on screen
+            entry.target.classList.add('visible'); // add 'visible' class → triggers CSS animation
+          }
+        });
+      },
+      { threshold: 0.1 }  // trigger when 10% of the element is visible
+    );
+
+    // Observe every element with class 'reveal'
+    document.querySelectorAll('.reveal').forEach(function(el) {
+      observer.observe(el);
+    });
+    // ─── BOOKING WIDGET ──────────────────────────────────────
+    // JavaScript lesson: new Date() gives us today's date and time.
+    // We use it to generate the next 8 available weekdays dynamically —
+    // so the calendar always shows real upcoming dates, never hardcoded ones.
+
+    const dayNames  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    // Build the day grid with the next 8 days (skipping Sundays)
+    const dayGrid = document.getElementById('dayGrid');
+    let date = new Date();
+    date.setDate(date.getDate() + 1); // start from tomorrow
+    let daysAdded = 0;
+
+    while (daysAdded < 8) {
+      if (date.getDay() !== 0) { // 0 = Sunday, skip it
+        const btn = document.createElement('button'); // create a new <button> element
+        btn.className = 'day-btn';
+        btn.dataset.date = date.toDateString(); // store the full date string on the element
+
+        // Template literal — inserts variables directly into a string using ${}
+        btn.innerHTML = `<span>${dayNames[date.getDay()]}</span>${date.getDate()} ${monthNames[date.getMonth()]}`;
+        dayGrid.appendChild(btn); // add it to the page
+        daysAdded++;
+      }
+      date.setDate(date.getDate() + 1); // move to next day
+    }
+
+    // State — we store what the user has selected
+    let selectedDay  = null;
+    let selectedTime = null;
+
+    // DAY SELECTION
+    dayGrid.addEventListener('click', function(e) {
+      const btn = e.target.closest('.day-btn');
+      if (!btn) return;
+
+      // Remove 'selected' from all day buttons, add to clicked one
+      document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedDay = btn.dataset.date;
+
+      // Enable the Next button now that a day is chosen
+      document.getElementById('toStep2').disabled = false;
+    });
+
+    // TIME SELECTION
+    document.getElementById('timeGrid').addEventListener('click', function(e) {
+      const btn = e.target.closest('.time-btn');
+      if (!btn) return;
+      document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedTime = btn.dataset.time;
+      document.getElementById('toStep3').disabled = false;
+    });
+
+    // STEP NAVIGATION — moving between panels
+    // This is a reusable function: DRY principle (Don't Repeat Yourself)
+    function goToStep(step) {
+      // Hide all panels
+      document.querySelectorAll('.widget-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.wstep').forEach(s => { s.classList.remove('active'); s.classList.remove('done'); });
+
+      // Show the right panel
+      document.getElementById('panel' + step).classList.add('active');
+
+      // Update step indicators
+      for (let i = 1; i <= 3; i++) {
+        if (i < step)       document.getElementById('ws' + i).classList.add('done');
+        else if (i === step) document.getElementById('ws' + i).classList.add('active');
+      }
+    }
+
+    document.getElementById('toStep2').addEventListener('click',     () => goToStep(2));
+    document.getElementById('toStep1Back').addEventListener('click', () => goToStep(1));
+    document.getElementById('toStep3').addEventListener('click',     () => goToStep(3));
+    document.getElementById('toStep2Back').addEventListener('click', () => goToStep(2));
+
+    // CONFIRM BOOKING
+    document.getElementById('confirmBook').addEventListener('click', function() {
+      const name  = document.getElementById('clientName').value.trim();
+      const email = document.getElementById('clientEmail').value.trim();
+
+      // Basic validation — if / else checks conditions
+      if (!name || !email) {
+        alert('Please enter your name and email to confirm.');
+        return; // stop here, don't proceed
+      }
+
+      // Hide all panels, show confirmation
+      document.querySelectorAll('.widget-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.wstep').forEach(s => s.classList.add('done'));
+
+      // Build confirmation message using template literals
+      const biz = document.getElementById('clientBiz').value.trim();
+      document.getElementById('confirmDetails').innerHTML =
+        `<span>Name:</span> ${name}<br>
+         <span>Email:</span> ${email}<br>
+         <span>Date:</span> ${selectedDay}<br>
+         <span>Time:</span> ${selectedTime}<br>
+         ${biz ? `<span>About:</span> ${biz}` : ''}`;
+
+      document.getElementById('bookingConfirm').style.display = 'block';
+    });
+
+    // ─── ORDER MODAL ──────────────────────────────────────────
+    // JavaScript Lesson: Managing modal state (open/close)
+    
+    const orderModal = document.getElementById('orderModal');
+    const modalOverlay = document.getElementById('modalOverlay');
+    const modalClose = document.getElementById('modalClose');
+
+    // Function to open modal
+    function openOrderModal() {
+      orderModal.classList.add('active');
+      modalOverlay.classList.add('active');
+      document.body.style.overflow = 'hidden'; // Prevent scrolling behind modal
+    }
+
+    // Function to close modal
+    function closeOrderModal() {
+      orderModal.classList.remove('active');
+      modalOverlay.classList.remove('active');
+      document.body.style.overflow = ''; // Restore scrolling
+      
+      // Reset form after closing (optional)
+      setTimeout(() => {
+        resetOrderForm();
+      }, 500);
+    }
+
+    // Function to reset form to initial state
+    function resetOrderForm() {
+      document.querySelectorAll('.form-input, .form-textarea, .form-select').forEach(input => {
+        input.value = '';
+      });
+      document.querySelectorAll('.feature-checkbox').forEach(cb => {
+        cb.checked = false;
+      });
+      
+      // Reset steps and show step 1
+      document.querySelectorAll('.step').forEach((step, index) => {
+        const circle = step.querySelector('.step-circle');
+        step.classList.remove('active', 'completed');
+        circle.textContent = index + 1; // Restore numbers
+      });
+      
+      document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+      document.getElementById('section1').classList.add('active');
+      document.getElementById('step1').classList.add('active');
+      document.getElementById('confirmation').classList.remove('active');
+      
+      currentStep = 1;
+    }
+
+    // Open modal when clicking any "Order" button
+    document.querySelectorAll('.open-order-modal').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        openOrderModal();
+      });
+    });
+
+    // Close modal when clicking X button
+    modalClose.addEventListener('click', closeOrderModal);
+
+    // Close modal when clicking overlay
+    modalOverlay.addEventListener('click', closeOrderModal);
+
+    // Close modal after successful order
+    document.getElementById('closeModalAfterOrder').addEventListener('click', closeOrderModal);
+
+    // Prevent modal from closing when clicking inside it
+    orderModal.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
+    // ─── MULTI-STEP FORM LOGIC ─────────────────────────────────
+    let currentStep = 1;
+
+    function showOrderSection(stepNumber) {
+      // Hide all sections
+      document.querySelectorAll('.form-section').forEach(section => {
+        section.classList.remove('active');
+      });
+
+      // Show the target section
+      document.getElementById('section' + stepNumber).classList.add('active');
+
+      // Update progress steps
+      document.querySelectorAll('.step').forEach((step, index) => {
+        const stepNum = index + 1;
+        const circle = step.querySelector('.step-circle');
+        
+        step.classList.remove('active', 'completed');
+        
+        if (stepNum < stepNumber) {
+          // Completed step - show checkmark
+          step.classList.add('completed');
+          circle.textContent = ''; // Remove number
+        } else if (stepNum === stepNumber) {
+          // Active step - show number
+          step.classList.add('active');
+          circle.textContent = stepNum;
+        } else {
+          // Future step - show number
+          circle.textContent = stepNum;
+        }
+      });
+
+      currentStep = stepNumber;
+    }
+
+    // Navigation buttons
+    document.getElementById('toSection2').addEventListener('click', () => {
+      const businessName = document.getElementById('businessName').value.trim();
+      const industry = document.getElementById('industry').value;
+
+      if (!businessName || !industry) {
+        alert('Please fill in all required fields (Business Name and Industry)');
+        return;
+      }
+
+      showOrderSection(2);
+    });
+
+    document.getElementById('backToSection1').addEventListener('click', () => {
+      showOrderSection(1);
+    });
+
+    document.getElementById('toSection3').addEventListener('click', () => {
+      const description = document.getElementById('websiteDescription').value.trim();
+
+      if (!description) {
+        alert('Please describe your dream website');
+        return;
+      }
+
+      showOrderSection(3);
+    });
+
+    document.getElementById('backToSection2').addEventListener('click', () => {
+      showOrderSection(2);
+    });
+
+    // ─── SUBMIT ORDER (SAVE TO LOCALSTORAGE) ──────────────────
+    document.getElementById('submitOrder').addEventListener('click', () => {
+      // Collect all form data
+      const businessName = document.getElementById('businessName').value.trim();
+      const industry = document.getElementById('industry').value;
+      const currentWebsite = document.getElementById('currentWebsite').value.trim();
+      const description = document.getElementById('websiteDescription').value.trim();
+      const timeline = document.getElementById('timeline').value;
+      const fullName = document.getElementById('fullName').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+
+      // Get selected features
+      const features = [];
+      document.querySelectorAll('.feature-checkbox:checked').forEach(checkbox => {
+        features.push(checkbox.value);
+      });
+
+      // Validation
+      if (!businessName || !industry || !description || !fullName || !email) {
+        alert('Please fill in all required fields');
+        return;
+      }
+
+      // Generate unique order ID
+      const orderId = 'ORD-' + Date.now();
+
+      // Calculate estimated delivery date
+      const today = new Date();
+      let deliveryDays;
+      let timelineText;
+
+      if (timeline === 'urgent') {
+        deliveryDays = 3;
+        timelineText = 'Rush (2-3 days)';
+      } else if (timeline === 'standard') {
+        deliveryDays = 7;
+        timelineText = 'Standard (5-7 days)';
+      } else {
+        deliveryDays = 14;
+        timelineText = 'Flexible (1-2 weeks)';
+      }
+
+      const deliveryDate = new Date(today);
+      deliveryDate.setDate(deliveryDate.getDate() + deliveryDays);
+
+      const deliveryFormatted = deliveryDate.toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      });
+
+      // Create order object
+      const order = {
+        id: orderId,
+        businessName: businessName,
+        industry: industry,
+        currentWebsite: currentWebsite,
+        description: description,
+        features: features,
+        timeline: timeline,
+        fullName: fullName,
+        email: email,
+        phone: phone,
+        orderDate: today.toISOString(),
+        estimatedDelivery: deliveryDate.toISOString(),
+        status: 'ordered'
+      };
+
+      // Get existing orders from localStorage
+      let orders = [];
+      const existingOrders = localStorage.getItem('siteforge_orders');
+      
+      if (existingOrders) {
+        orders = JSON.parse(existingOrders);
+      }
+
+      // Add new order
+      orders.push(order);
+
+      // Save to localStorage
+      localStorage.setItem('siteforge_orders', JSON.stringify(orders));
+
+      // Hide form, show confirmation
+      document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+      document.getElementById('confirmation').classList.add('active');
+
+      // Mark all steps as completed
+      document.querySelectorAll('.step').forEach((step, index) => {
+        const circle = step.querySelector('.step-circle');
+        step.classList.remove('active');
+        step.classList.add('completed');
+        circle.textContent = ''; // Remove number, checkmark will show
+      });
+
+      // Update confirmation details
+      document.getElementById('confirmEmail').textContent = email;
+      document.getElementById('orderId').textContent = orderId;
+      document.getElementById('summaryBusiness').textContent = businessName;
+      document.getElementById('summaryIndustry').textContent = industry;
+      document.getElementById('summaryTimeline').textContent = timelineText;
+      document.getElementById('estimatedDelivery').textContent = deliveryFormatted;
+
+      // Success feedback
+      console.log('✅ Order saved to localStorage:', order);
+      console.log('📦 All orders:', orders);
+
+      // 🤖 AUTO-GENERATE WEBSITE (Week 4 Feature!)
+      generateWebsiteForOrder(order);
+    });
+
+    // ═══════════════════════════════════════════════════════════
+    // AI WEBSITE GENERATOR ENGINE
+    // ═══════════════════════════════════════════════════════════
+    
+    const AIWebsiteGenerator = {
+      generateWebsite(order) {
+        console.log('🤖 AI generating website for:', order.businessName);
+        const template = this.selectTemplate(order.industry);
+        const html = this.buildHTML(order, template);
+        return {
+          html: html,
+          generatedAt: new Date().toISOString(),
+          industry: order.industry,
+          businessName: order.businessName
+        };
+      },
+
+      selectTemplate(industry) {
+        const templates = {
+          restaurant: this.restaurantTemplate,
+          ecommerce: this.ecommerceTemplate,
+          services: this.servicesTemplate,
+          health: this.servicesTemplate,
+          tech: this.servicesTemplate,
+          realestate: this.servicesTemplate,
+          creative: this.servicesTemplate,
+          education: this.servicesTemplate,
+          nonprofit: this.servicesTemplate,
+          other: this.defaultTemplate
+        };
+        return templates[industry] || templates.other;
+      },
+
+      buildHTML(order, template) {
+        const colors = this.getColorScheme(order.industry);
+        return template.generateHTML(order, colors);
+      },
+
+      getColorScheme(industry) {
+        const schemes = {
+          restaurant: { primary: '#D4524F', secondary: '#B83E3B', accent: '#F6A623', dark: '#2C1810', light: '#FFF8F0', text: '#333' },
+          ecommerce: { primary: '#6C5CE7', secondary: '#5245C2', accent: '#FD79A8', dark: '#2D3436', light: '#F8F9FA', text: '#2D3436' },
+          services: { primary: '#0984E3', secondary: '#0768B8', accent: '#00B894', dark: '#2D3436', light: '#F5F6FA', text: '#2D3436' }
+        };
+        return schemes[industry] || schemes.services;
+      },
+
+      restaurantTemplate: {
+        generateHTML: (order, colors) => `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${order.businessName}</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:sans-serif;line-height:1.6;color:${colors.text}}
+header{background:${colors.dark};color:#fff;padding:1.5rem 5%}nav{display:flex;justify-content:space-between;max-width:1200px;margin:0 auto}
+.logo{font-size:1.8rem;font-weight:700;color:${colors.accent}}.hero{background:linear-gradient(135deg,${colors.primary},${colors.secondary});color:#fff;padding:6rem 5% 4rem;text-align:center}
+.hero h1{font-size:clamp(2.5rem,5vw,4rem);margin-bottom:1.5rem}.hero p{font-size:1.3rem;margin-bottom:2rem}
+section{padding:4rem 5%;max-width:1200px;margin:0 auto}h2{font-size:2.5rem;margin-bottom:2rem;text-align:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:2rem;margin-top:3rem}
+.card{background:#fff;padding:2rem;border-radius:10px;box-shadow:0 4px 15px rgba(0,0,0,.08)}
+.card h3{color:${colors.primary};margin-bottom:1rem;font-size:1.5rem}
+footer{background:${colors.dark};color:#fff;text-align:center;padding:2rem;margin-top:4rem}</style></head>
+<body><header><nav><div class="logo">${order.businessName}</div></nav></header>
+<section class="hero"><h1>Welcome to ${order.businessName}</h1><p>${order.description || 'Experience culinary excellence'}</p></section>
+<section><h2>Our Menu</h2><div class="grid">
+<div class="card"><h3>Appetizers</h3><p>Start with our delicious starters.</p></div>
+<div class="card"><h3>Main Courses</h3><p>Savor our signature dishes.</p></div>
+<div class="card"><h3>Desserts</h3><p>End on a sweet note.</p></div></div></section>
+<footer><p>&copy; ${new Date().getFullYear()} ${order.businessName}</p><p>${order.email}</p></footer></body></html>`
+      },
+
+      ecommerceTemplate: {
+        generateHTML: (order, colors) => `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${order.businessName}</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:sans-serif;line-height:1.6}
+header{background:${colors.dark};color:#fff;padding:1.5rem 5%}.logo{font-size:1.8rem;font-weight:700;color:${colors.accent}}
+.hero{background:linear-gradient(135deg,${colors.primary},${colors.secondary});color:#fff;padding:6rem 5%;text-align:center}
+.hero h1{font-size:3rem;margin-bottom:1rem}section{padding:4rem 5%;max-width:1200px;margin:0 auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:2rem}
+.card{background:#fff;padding:2rem;border-radius:10px;box-shadow:0 4px 15px rgba(0,0,0,.08);text-align:center}
+.price{font-size:1.8rem;font-weight:700;color:${colors.primary};margin:1rem 0}
+footer{background:${colors.dark};color:#fff;text-align:center;padding:2rem;margin-top:4rem}</style></head>
+<body><header><div class="logo">${order.businessName}</div></header>
+<section class="hero"><h1>${order.businessName}</h1><p>${order.description || 'Discover amazing products'}</p></section>
+<section><h2>Featured Products</h2><div class="grid">
+<div class="card"><div style="font-size:4rem">📦</div><h3>Product One</h3><p>High-quality item.</p><div class="price">$99.99</div></div>
+<div class="card"><div style="font-size:4rem">🎁</div><h3>Product Two</h3><p>Premium choice.</p><div class="price">$149.99</div></div>
+<div class="card"><div style="font-size:4rem">⭐</div><h3>Product Three</h3><p>Customer favorite.</p><div class="price">$79.99</div></div></div></section>
+<footer><p>&copy; ${new Date().getFullYear()} ${order.businessName}</p><p>${order.email}</p></footer></body></html>`
+      },
+
+      servicesTemplate: {
+        generateHTML: (order, colors) => `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${order.businessName}</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:sans-serif;line-height:1.6}
+header{background:${colors.dark};color:#fff;padding:1.5rem 5%}.logo{font-size:1.8rem;font-weight:700;color:${colors.accent}}
+.hero{background:linear-gradient(135deg,${colors.primary},${colors.secondary});color:#fff;padding:6rem 5%;text-align:center}
+.hero h1{font-size:3rem;margin-bottom:1rem}section{padding:4rem 5%;max-width:1200px;margin:0 auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:2rem}
+.card{background:#fff;padding:2rem;border-radius:10px;box-shadow:0 4px 15px rgba(0,0,0,.08)}
+footer{background:${colors.dark};color:#fff;text-align:center;padding:2rem;margin-top:4rem}</style></head>
+<body><header><div class="logo">${order.businessName}</div></header>
+<section class="hero"><h1>Professional Services</h1><p>${order.description || 'Expert solutions for you'}</p></section>
+<section><h2>Our Services</h2><div class="grid">
+<div class="card"><h3>🎯 Consulting</h3><p>Expert guidance.</p></div>
+<div class="card"><h3>⚙️ Implementation</h3><p>Tailored solutions.</p></div>
+<div class="card"><h3>📈 Optimization</h3><p>Maximum efficiency.</p></div></div></section>
+<footer><p>&copy; ${new Date().getFullYear()} ${order.businessName}</p><p>${order.email}</p></footer></body></html>`
+      },
+
+      defaultTemplate: {
+        generateHTML: (order, colors) => `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${order.businessName}</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:sans-serif;line-height:1.6}
+header{background:#2D3436;color:#fff;padding:1.5rem 5%}.logo{font-size:1.8rem;font-weight:700}
+.hero{background:linear-gradient(135deg,${colors.primary},${colors.secondary});color:#fff;padding:6rem 5%;text-align:center}
+.hero h1{font-size:3rem;margin-bottom:1rem}section{padding:4rem 5%;max-width:1200px;margin:0 auto}
+footer{background:#2D3436;color:#fff;text-align:center;padding:2rem;margin-top:4rem}</style></head>
+<body><header><div class="logo">${order.businessName}</div></header>
+<section class="hero"><h1>${order.businessName}</h1><p>${order.description || 'Welcome to our website'}</p></section>
+<section><h2>About Us</h2><p>We provide excellent service and solutions.</p></section>
+<footer><p>&copy; ${new Date().getFullYear()} ${order.businessName}</p><p>${order.email}</p></footer></body></html>`
+      }
+    };
+
+    // ─── AI WEBSITE GENERATION ──────────────────────────────────
+    // JavaScript Lesson: Async website generation using mock AI
+    
+    function generateWebsiteForOrder(order) {
+      console.log('🤖 Starting AI website generation for:', order.id);
+      
+      try {
+        // Generate website HTML using AI engine (INSTANT - no delay needed)
+        const result = AIWebsiteGenerator.generateWebsite(order);
+        
+        // Save generated website to order IMMEDIATELY
+        const orders = JSON.parse(localStorage.getItem('siteforge_orders'));
+        const orderIndex = orders.findIndex(o => o.id === order.id);
+        
+        if (orderIndex !== -1) {
+          orders[orderIndex].generatedWebsite = result;
+          orders[orderIndex].websiteGeneratedAt = result.generatedAt;
+          localStorage.setItem('siteforge_orders', JSON.stringify(orders));
+          
+          console.log('✅ Website generated successfully!');
+          console.log('📄 Preview:', result.html.substring(0, 200) + '...');
+          console.log('🎉 Website is immediately available in admin panel!');
+        }
+      } catch (error) {
+        console.error('❌ Website generation failed:', error);
+      }
+    }
+
+    // Developer tool: View saved orders
+    window.viewOrders = function() {
+      const orders = localStorage.getItem('siteforge_orders');
+      if (orders) {
+        console.table(JSON.parse(orders));
+      } else {
+        console.log('No orders found');
+      }
+    };
+
+  </script>
+
+</body>
+</html>
