@@ -31,26 +31,7 @@
       font-family: 'DM Sans', sans-serif;
       font-weight: 300;
       overflow-x: hidden;
-      cursor: none;
-    }
-
-    /* ── CUSTOM CURSOR ── */
-    .cursor {
-      width: 6px; height: 6px;
-      background: var(--gold);
-      border-radius: 50%;
-      position: fixed; top: 0; left: 0;
-      pointer-events: none; z-index: 9999;
-      transition: background .2s, border .2s, width .2s, height .2s;
-      will-change: transform;
-    }
-    .cursor-ring {
-      width: 26px; height: 26px;
-      border: 1px solid rgba(201,168,76,.4);
-      border-radius: 50%;
-      position: fixed; top: 0; left: 0;
-      pointer-events: none; z-index: 9998;
-      will-change: transform;
+      cursor: default;
     }
 
     /* ── NOISE OVERLAY ── */
@@ -522,10 +503,6 @@
   </style>
 </head>
 <body>
-  <!-- Cursor elements -->
-  <div class="cursor" id="cursor"></div>
-  <div class="cursor-ring" id="cursorRing"></div>
-
   <!-- LOGIN SCREEN -->
   <div class="login-screen" id="loginScreen">
     <div class="login-box">
@@ -661,40 +638,6 @@
   </div>
 
   <script>
-    // ─── CURSOR ANIMATION ───────────────────────────────────────
-    const cursor = document.getElementById('cursor');
-    const ring = document.getElementById('cursorRing');
-    let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
-
-    document.addEventListener('mousemove', (e) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-    });
-
-    function animateCursor() {
-      cursor.style.transform = `translate(${mouseX - 3}px, ${mouseY - 3}px)`;
-      ringX += (mouseX - ringX) * 0.12;
-      ringY += (mouseY - ringY) * 0.12;
-      ring.style.transform = `translate(${ringX - 13}px, ${ringY - 13}px)`;
-      requestAnimationFrame(animateCursor);
-    }
-    animateCursor();
-
-    document.querySelectorAll('a, button, input, select').forEach(el => {
-      el.addEventListener('mouseenter', () => {
-        cursor.style.width = '8px';
-        cursor.style.height = '8px';
-        cursor.style.background = 'transparent';
-        cursor.style.border = '1px solid var(--gold)';
-      });
-      el.addEventListener('mouseleave', () => {
-        cursor.style.width = '6px';
-        cursor.style.height = '6px';
-        cursor.style.background = 'var(--gold)';
-        cursor.style.border = 'none';
-      });
-    });
-
     // ─── AUTHENTICATION ─────────────────────────────────────────
     // JavaScript Lesson: Simple password-based authentication using localStorage
     
@@ -846,12 +789,6 @@
     const industryFilter = document.getElementById('industryFilter');
 
     function filterOrders() {
-      // Safety check - make sure allOrders exists
-      if (!allOrders || allOrders.length === 0) {
-        renderOrders([]);
-        return;
-      }
-
       const searchTerm = searchBox.value.toLowerCase();
       const statusValue = statusFilter.value;
       const industryValue = industryFilter.value;
@@ -881,10 +818,9 @@
       renderOrders(filtered);
     }
 
-    // Attach event listeners safely
-    if (searchBox) searchBox.addEventListener('input', filterOrders);
-    if (statusFilter) statusFilter.addEventListener('change', filterOrders);
-    if (industryFilter) industryFilter.addEventListener('change', filterOrders);
+    searchBox.addEventListener('input', filterOrders);
+    statusFilter.addEventListener('change', filterOrders);
+    industryFilter.addEventListener('change', filterOrders);
 
     // ─── ORDER DETAILS MODAL ────────────────────────────────────
     const detailOverlay = document.getElementById('detailOverlay');
@@ -1014,8 +950,8 @@
         <div class="detail-section">
           <h3>🤖 Generated Website</h3>
           <p style="color: var(--muted); text-align: center; padding: 2rem;">
-            ⏳ Website generation in progress...<br>
-            <small>If the order was just placed, refresh this page to see the generated website.</small>
+            ⏳ Website is being generated...<br>
+            <small>This usually takes 1-2 seconds</small>
           </p>
         </div>
         `}
@@ -1228,13 +1164,12 @@
     window.closeEmailPreview = closeEmailPreview;
 
     // ─── AUTO-REFRESH ───────────────────────────────────────────
-    // Reload orders every 5 seconds to catch new submissions and generated websites
+    // Reload orders every 30 seconds to catch new submissions
     setInterval(() => {
       if (sessionStorage.getItem('admin_logged_in') === 'true') {
         loadOrders();
-        console.log('🔄 Auto-refreshed orders');
       }
-    }, 5000); // Check every 5 seconds
+    }, 30000);
 
   </script>
 </body>
