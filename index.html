@@ -2118,64 +2118,70 @@
         year: 'numeric'
       });
 
-      // Create order object
-      const order = {
-        id: orderId,
-        businessName: businessName,
+      // Show loading state
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Generating website... This may take 1-2 minutes';
+
+      // Create order object for API
+      const orderData = {
+        full_name: fullName,
+        email: email,
+        business_name: businessName,
         industry: industry,
-        currentWebsite: currentWebsite,
         description: description,
         features: features,
-        timeline: timeline,
-        fullName: fullName,
-        email: email,
-        phone: phone,
-        orderDate: today.toISOString(),
-        estimatedDelivery: deliveryDate.toISOString(),
-        status: 'ordered'
+        timeline: timeline
       };
 
-      // Get existing orders from localStorage
-      let orders = [];
-      const existingOrders = localStorage.getItem('siteforge_orders');
-      
-      if (existingOrders) {
-        orders = JSON.parse(existingOrders);
+      try {
+        // Send to Vercel backend
+        console.log('📤 Sending order to backend...');
+        const response = await fetch('https://siteforge-backend.vercel.app/api/process-order', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(orderData)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          console.log('✅ Order processed successfully:', result);
+
+          // Hide form, show confirmation
+          document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+          document.getElementById('confirmation').classList.add('active');
+
+          // Mark all steps as completed
+          document.querySelectorAll('.step').forEach((step, index) => {
+            const circle = step.querySelector('.step-circle');
+            step.classList.remove('active');
+            step.classList.add('completed');
+            circle.textContent = '';
+          });
+
+          // Update confirmation details
+          document.getElementById('confirmEmail').textContent = email;
+          document.getElementById('orderId').textContent = result.orderId;
+          document.getElementById('summaryBusiness').textContent = businessName;
+          document.getElementById('summaryIndustry').textContent = industry;
+          document.getElementById('summaryTimeline').textContent = timelineText;
+          document.getElementById('estimatedDelivery').textContent = deliveryFormatted;
+
+          // Show success message
+          alert('✅ Website generated successfully!\n\nOrder ID: ' + result.orderId + '\n\nCheck the admin dashboard to download your website.');
+
+        } else {
+          throw new Error(result.error || 'Failed to process order');
+        }
+
+      } catch (error) {
+        console.error('❌ Error processing order:', error);
+        alert('❌ Error: ' + error.message + '\n\nPlease try again or contact support.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Confirm Order';
       }
-
-      // Add new order
-      orders.push(order);
-
-      // Save to localStorage
-      localStorage.setItem('siteforge_orders', JSON.stringify(orders));
-
-      // Hide form, show confirmation
-      document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
-      document.getElementById('confirmation').classList.add('active');
-
-      // Mark all steps as completed
-      document.querySelectorAll('.step').forEach((step, index) => {
-        const circle = step.querySelector('.step-circle');
-        step.classList.remove('active');
-        step.classList.add('completed');
-        circle.textContent = ''; // Remove number, checkmark will show
-      });
-
-      // Update confirmation details
-      document.getElementById('confirmEmail').textContent = email;
-      document.getElementById('orderId').textContent = orderId;
-      document.getElementById('summaryBusiness').textContent = businessName;
-      document.getElementById('summaryIndustry').textContent = industry;
-      document.getElementById('summaryTimeline').textContent = timelineText;
-      document.getElementById('estimatedDelivery').textContent = deliveryFormatted;
-
-      // Success feedback
-      console.log('✅ Order saved to localStorage:', order);
-      console.log('📦 All orders:', orders);
-
-      // 🤖 AUTO-GENERATE WEBSITE (Week 4 Feature!)
-      generateWebsiteForOrder(order);
-    });
 
     // ═══════════════════════════════════════════════════════════
     // AI WEBSITE GENERATOR ENGINE
